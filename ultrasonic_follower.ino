@@ -6,11 +6,11 @@
 #define echoPin3 A1
 
 #define left_dir1 24
-#define left_dir2 25
+#define left_dir2 26
 #define left_pwm 8
 
-#define right_dir1 26
-#define right_dir2 27
+#define right_dir1 28
+#define right_dir2 30
 #define right_pwm 7
 
 #define LEFT 0
@@ -45,12 +45,16 @@ void setup() {
  
 void loop() {
   readSensors();
+
+  follow();
  
   Serial.print(sensor[LEFT]);
   Serial.print(" - ");
   Serial.print(sensor[FRONT]);
   Serial.print(" - ");
-  Serial.println(sensor[RIGHT]);
+  Serial.print(sensor[RIGHT]);
+  Serial.print(" - ");
+  Serial.println(base_speed);
 
 }
 
@@ -61,8 +65,8 @@ void forward(int left_speed, int right_speed){
 }
 
 void setDirForward(){
-  setLeftDir(1);
-  setRightDir(0);
+  setLeftDir(0);
+  setRightDir(1);
 }
 
 void setDir(int dir){
@@ -80,10 +84,10 @@ void setRightDir(int dir){
 }
 
 void setLeftSpeed(int speed){
-  digitalWrite(left_pwm, speed);
+  analogWrite(left_pwm, speed);
 }
 void setRightSpeed(int speed){
-  digitalWrite(right_pwm, speed);
+  analogWrite(right_pwm, speed);
 }
 
 void setSpeed(int speed){
@@ -110,11 +114,19 @@ void readSensors(){
 }
 
 void calculateBaseSpeed(){
-  closest_distance = 100;
+  closest_distance = sensor[FRONT];
   for(int i=0; i<NUM_SENSORS; i++){
-    if(sensor[i] < closest_distance) closest_distance = sensor[i];
+    if(sensor[i] < closest_distance) { 
+      closest_distance = sensor[i];
+    }
   }
-  base_speed = 30 + closest_distance;
+  closest_distance = constrain(closest_distance, 3, 70);
+  base_speed = 40 + closest_distance;
+}
+
+void follow(){
+  calculateBaseSpeed();
+  forward(base_speed, base_speed);
 }
 
 void calculateSpeedDifference(){
@@ -131,7 +143,8 @@ long readSensor(int trigPin,int echoPin) {
   digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
-
+  
+  duration = pulseIn(echoPin, HIGH);
   
   distance = (duration/2) / 29.1;
   return distance;
